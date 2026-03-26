@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ShopHub</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+@keyframes fadeIn {
+  from { opacity:0; transform:translateY(10px); }
+  to { opacity:1; transform:translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease forwards;
+}
+</style>
+
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+
+<!-- HEADER -->
+<header class="bg-white shadow-md sticky top-0 z-30">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+    
+    <div class="flex items-center gap-3">
+      <div class="bg-blue-600 p-2.5 rounded-lg">
+        <i data-lucide="store" class="text-white"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold">ShopHub</h1>
+        <p class="text-xs text-gray-500">Your favorite store</p>
+      </div>
+    </div>
+
+    <button onclick="toggleCart()"
+      class="relative bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg flex items-center gap-2 active:scale-95 transition">
+      <i data-lucide="shopping-cart"></i>
+      Cart
+      <span id="cart-count"
+        class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-pulse">0</span>
+    </button>
+
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-8">
+
+<div class="mb-8">
+  <h2 class="text-3xl font-bold mb-2">Discover Amazing Products</h2>
+  <p class="text-gray-600">Browse our collection</p>
+</div>
+
+
+<div class="bg-white rounded-lg shadow-md p-6 mb-8 grid md:grid-cols-3 gap-4">
+
+  <div class="relative">
+    <i data-lucide="search" class="absolute left-3 top-3 text-gray-400"></i>
+    <input id="search" placeholder="Search..."
+      class="w-full pl-10 p-3 border rounded-lg"/>
+  </div>
+
+  <select id="category" class="border p-3 rounded-lg">
+    <option value="">All Categories</option>
+  </select>
+
+  <select id="sort" class="border p-3 rounded-lg">
+    <option value="">Sort By</option>
+    <option value="name-asc">Name A-Z</option>
+    <option value="name-desc">Name Z-A</option>
+    <option value="price-asc">Price Low</option>
+    <option value="price-desc">Price High</option>
+    <option value="rating">Rating</option>
+  </select>
+
+</div>
+
+<div id="products"
+class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+
+</main>
+
+<div id="overlay"
+class="fixed inset-0 bg-black bg-opacity-50 hidden opacity-0 transition-opacity duration-300 z-40"
+onclick="toggleCart()"></div>
+
+<div id="cart"
+class="fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-50 transform translate-x-full opacity-0 transition-all duration-300 ease-in-out">
+
+<div class="flex flex-col h-full">
+
+<div class="flex justify-between items-center p-6 border-b">
+  <h2 class="text-xl font-bold">
+    Shopping Cart (<span id="cart-count-2">0</span>)
+  </h2>
+  <button onclick="toggleCart()">
+    <i data-lucide="x"></i>
+  </button>
+</div>
+
+<div id="cart-items" class="flex-1 overflow-y-auto p-6"></div>
+
+<div id="cart-footer" class="border-t p-6 bg-gray-50 hidden">
+  <div class="flex justify-between mb-4">
+    <span class="text-lg font-semibold">Total:</span>
+    <span class="text-2xl font-bold text-blue-600">$<span id="total">0</span></span>
+  </div>
+  <button class="w-full bg-blue-600 text-white py-4 rounded-lg active:scale-95 transition">
+    Proceed to Checkout
+  </button>
+</div>
+
+</div>
+</div>
+
+<script>
+const products = [
+{ id:1,name:'Wireless Headphones',category:'Electronics',price:265.99,image:'https://images.pexels.com/photos/3394650/pexels-photo-3394650.jpeg',description:'Premium wireless headphones',rating:4.5},
+{ id:2,name:'Smart Watch',category:'Electronics',price:29.99,image:'https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg',description:'Fitness tracking',rating:4.7},
+{ id:3,name:'Boat Airdopes',category:'Electronics',price:1500.99,image:'https://m.media-amazon.com/images/I/61Le9eThRLL._SL1500_.jpg',description:'Ear Buds Wireless Earphones',rating:4.3},
+{ id:4,name:'Samsung Mobiles',category:'Electronics',price:19000,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/mobile/o/3/l/-original-imahhyzrvdyxntww.jpeg?q=90',description:'Samsung Galaxy S26 Ultra 5G',rating:4.6},
+{ id:5,name:'Laptop',category:'Electronics',price:44099,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/computer/c/i/q/-original-imahg5fxrxmyynwg.jpeg?q=90',description:'Acer Aspire 7 Intel Core i5 12th Gen 12450H',rating:4.4},
+{ id:6,name:'Leather Backpack',category:'Fashion',price:79.99,image:'https://images.pexels.com/photos/2905238/pexels-photo-2905238.jpeg',description:'Genuine leather',rating:4.3},
+{ id:7,name:'Jacket',category:'Fashion',price:580,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/jacket/0/d/d/xl-no-cotton-logo-10-azmani-original-imah4zm7wn6tmhaj.jpeg?q=90',description:'FUTSE PENO Men Embroidered Biker/Riding Jacket',rating:4.3},
+{ id:8,name:'Kurta',category:'Fashion',price:300,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/shirt/w/n/a/44-kurta-shirt-bear-supreme-stitch-original-imahjbba5tqxxz3f.jpeg?q=90',description:'Cotton Blend Asymmetric Kurta',rating:4.3},
+{ id:9,name:'T-Shirt',category:'Fashion',price:499,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/t-shirt/2/d/9/-original-imagycsgzaghk9fd.jpeg?q=90',description:'Pure Cotton Blue T-Shirt',rating:4.3},
+{ id:10,name:'Cargos',category:'Fashion',price:999,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/cargo/f/n/y/28-chicargo-06-olivegrn-urbano-fashion-original-imahhv24knh8bayh.jpeg?q=90',description:'Urbano Fashion Men Cargos',rating:4.3},
+{ id:11,name:'Running Shoes',category:'Sports',price:119.99,image:'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg',description:'Lightweight shoes',rating:4.6},
+{ id:12,name:'Bat ',category:'Sports',price:300,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/bat/e/x/p/0-9-natural-popular-willow-cricket-bat-with-ball-bat-cover-1000-original-imah6zyuech56s3x.jpeg?q=90',description:'Willow Cricket Bat With Ball & Bat ',rating:4.6},
+{ id:13,name:'Badminton',category:'Sports',price:499,image:'https://rukminim2.flixcart.com/image/1366/1366/knqd3m80/kit/a/u/v/double-shaft-florescent-badminton-racket-pack-of-2-piece-with-6-original-imag2cffzhdhunw3.jpeg?q=90',description:'Plastic Shuttles Badminton Kit',rating:4.6},
+{ id:14,name:'Swimming Kit',category:'Sports',price:194,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/kit/b/v/h/silicone-cap-goggle-earplugs-noseplug-black-asc-01-17-arrowmax-4-original-imahkvu8cmf8zghd.jpeg?q=90',description:'Swimming Kit',rating:4.6},
+{ id:15,name:'Skateboard',category:'Sports',price:476,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/skateboard/r/t/s/power-kids-26-inches-skateboard-for-beginners-boys-girls-skate-original-imah259qw9bhbdke.jpeg?q=90',description:'Skateboard',rating:4.6},
+{ id:16,name:'Coffee Maker',category:'Home',price:149.99,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/coffee-maker/b/w/l/agaro-imperial-espresso-coffee-maker-agaro-imperial-espresso-original-imah8yevjuw56znh.jpeg?q=90',description:'Coffee maker',rating:4.4},
+{ id:17,name:'Painting',category:'Home',price:149.99,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/painting/w/x/7/12-2-as-11-saf-original-imahhzgmt2b7hnwq.jpeg?q=90',description:'Painting (With Frame, Pack of 2)',rating:4.4}, 
+{ id:18,name:'Clock',category:'Home',price:149.99,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/wall-clock/y/2/i/beautiful-analog-10-inch-x-10-inch-wall-clock-25-4-krishna-flute-original-imahhddqjfxxtxp3.jpeg?q=90',description:'Wall Clock (Black, With Glass, Standard)',rating:4.4},
+{ id:19,name:'TV Unit',category:'Home',price:149.99,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/tv-entertainment-unit/s/p/7/112-120-particle-board-17-wood-wall-mount-tv-unit-tv-stand-tv-original-imah9zvgvbghtfzx.jpeg?q=90',description:'Engineered Wood TV Entertainment Unit',rating:4.4},
+{ id:20,name:'Wall Lamp',category:'Home',price:149.99,image:'https://rukminim2.flixcart.com/image/1366/1366/xif0q/wall-lamp/q/2/e/na-20-5-kin-711-pvc-glass-wall-tapper-design-wall-light-wall-original-imagz6ym8yphbvfh.jpeg?q=90',description:'Wallchiere Wall Lamp Without Bulb',rating:4.4}
+];
+
+let cart = [];
+let search = '';
+let category = '';
+let sort = '';
+
+const cat = document.getElementById("category");
+[...new Set(products.map(p=>p.category))].forEach(c=>{
+  cat.innerHTML += `<option value="${c}">${c}</option>`;
+});
+
+document.getElementById("search").oninput = e=>{
+  search = e.target.value;
+  renderProducts();
+};
+
+cat.onchange = e=>{
+  category = e.target.value;
+  renderProducts();
+};
+
+document.getElementById("sort").onchange = e=>{
+  sort = e.target.value;
+  renderProducts();
+};
+
+function renderProducts(){
+  let list = [...products];
+
+  if(search) list = list.filter(p=>p.name.toLowerCase().includes(search.toLowerCase()));
+  if(category) list = list.filter(p=>p.category===category);
+
+  if(sort==="price-asc") list.sort((a,b)=>a.price-b.price);
+  if(sort==="price-desc") list.sort((a,b)=>b.price-a.price);
+  if(sort==="name-asc") list.sort((a,b)=>a.name.localeCompare(b.name));
+  if(sort==="name-desc") list.sort((a,b)=>b.name.localeCompare(a.name));
+  if(sort==="rating") list.sort((a,b)=>b.rating-a.rating);
+
+  const el = document.getElementById("products");
+  el.innerHTML = "";
+
+  list.forEach(p=>{
+    el.innerHTML += `
+    <div class="bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 hover:scale-[1.02]">
+      
+      <div class="relative h-64 bg-gray-100 overflow-hidden">
+        <img src="${p.image}" class="w-full h-full object-cover transition-transform duration-300 hover:scale-110">
+        <div class="absolute top-3 right-3 bg-white px-2 py-1 rounded text-sm">
+          $${p.price}
+        </div>
+      </div>
+
+      <div class="p-5">
+        <div class="flex justify-between mb-2">
+          <span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">${p.category}</span>
+          <span>⭐ ${p.rating}</span>
+        </div>
+
+        <h3 class="font-bold">${p.name}</h3>
+        <p class="text-sm text-gray-600 mb-3">${p.description}</p>
+
+        <button onclick="addToCart(${p.id}, this)"
+          class="w-full bg-blue-600 text-white py-2 rounded flex items-center justify-center gap-2 active:scale-95 transition">
+          <i data-lucide="shopping-cart"></i>
+          Add to Cart
+        </button>
+      </div>
+    </div>`;
+  });
+
+  lucide.createIcons();
+}
+
+function toggleCart(){
+  const cartEl = document.getElementById("cart");
+  const overlay = document.getElementById("overlay");
+
+  const isOpen = cartEl.classList.contains("translate-x-0");
+
+  if(isOpen){
+    cartEl.classList.replace("translate-x-0","translate-x-full");
+    cartEl.classList.replace("opacity-100","opacity-0");
+
+    overlay.classList.replace("opacity-100","opacity-0");
+
+    setTimeout(()=>overlay.classList.add("hidden"),300);
+  } else {
+    overlay.classList.remove("hidden");
+
+    setTimeout(()=>{
+      overlay.classList.replace("opacity-0","opacity-100");
+
+      cartEl.classList.replace("translate-x-full","translate-x-0");
+      cartEl.classList.replace("opacity-0","opacity-100");
+    },10);
+  }
+}
+
+function addToCart(id, btn){
+  btn.classList.add("scale-110");
+  setTimeout(()=>btn.classList.remove("scale-110"),150);
+
+  const item = cart.find(i=>i.id===id);
+  if(item) item.qty++;
+  else{
+    const p = products.find(p=>p.id===id);
+    cart.push({...p, qty:1});
+  }
+
+  renderCart();
+  toggleCart();
+}
+
+function renderCart(){
+  const el = document.getElementById("cart-items");
+  const footer = document.getElementById("cart-footer");
+
+  el.innerHTML = "";
+
+  let total=0, count=0;
+
+  if(cart.length===0){
+    el.innerHTML = `<p class="text-center text-gray-500">Your cart is empty</p>`;
+    footer.classList.add("hidden");
+  } else {
+
+    cart.forEach(item=>{
+      total += item.price*item.qty;
+      count += item.qty;
+
+      el.innerHTML += `
+      <div class="flex gap-4 bg-gray-50 p-4 rounded-lg mb-4 animate-fadeIn">
+
+        <img src="${item.image}" class="w-20 h-20 object-cover rounded-md"/>
+
+        <div class="flex-1">
+          <h3 class="font-semibold mb-1">${item.name}</h3>
+          <p class="text-sm text-gray-600 mb-2">$${item.price}</p>
+
+          <div class="flex items-center gap-3">
+
+            <div class="flex items-center border rounded-lg">
+              <button onclick="updateQty(${item.id},${item.qty-1})" class="px-2">−</button>
+              <span class="px-3">${item.qty}</span>
+              <button onclick="updateQty(${item.id},${item.qty+1})" class="px-2">+</button>
+            </div>
+
+            <button onclick="removeItem(${item.id})"
+              class="p-2 hover:bg-red-50 rounded-lg">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+
+          </div>
+        </div>
+
+        <div class="font-bold">
+          $${(item.price*item.qty).toFixed(2)}
+        </div>
+
+      </div>`;
+    });
+
+    footer.classList.remove("hidden");
+  }
+
+  document.getElementById("total").innerText = total.toFixed(2);
+  document.getElementById("cart-count").innerText = count;
+  document.getElementById("cart-count-2").innerText = count;
+
+  lucide.createIcons();
+}
+
+function updateQty(id,qty){
+  if(qty<=0){ removeItem(id); return; }
+  cart = cart.map(i=>i.id===id?{...i,qty}:i);
+  renderCart();
+}
+
+function removeItem(id){
+  cart = cart.filter(i=>i.id!==id);
+  renderCart();
+}
+
+/* INIT */
+renderProducts();
+lucide.createIcons();
+</script>
+
+</body>
+</html>
